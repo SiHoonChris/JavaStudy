@@ -1,71 +1,68 @@
 package SelfMade;
+// 코인노래방이나 야구배팅장 가면 있는 동전교환기
 
-public class VendingMachineChange{
-
-	public static void main(String[] args){
-		// 음료수 가격(price), 지불(pay)
-		// 잔돈(change)은 동전으로만 출력(500, 100, 50, 10)
-		// 잔돈 반환 시, 500원은 최대 10개, 100원은 최대 30개. 나머지는 제한 없음
-		int price= 2200, pay=4000;  
-		int change=pay-price;
-		int w500=0, w100=0, w50=0, w10=0;
-		System.out.println("가격 : "+price+", 지불 : "+pay+"원");
-		
-		if(pay>10000) {
-			System.out.println("1만원 이하로 넣으세요");
-			System.exit(0);
-		} else {
-			if(pay%10!=0) {
-				System.out.println("최소 단위가 10원인데???");
-				System.exit(0);
-			}
+class VendingMachine{  // 기계 내 잔돈 보유량
+	static final int[] CoinUnit = {500, 100};
+	static int[] CoinNumber = new int[2];
+	int fiveHundredWon = CoinNumber[0];
+	int oneHundredWon = CoinNumber[1];
+	
+	VendingMachine(){
+		for(int i=0; i<CoinNumber.length; i++) {
+			CoinNumber[i] = 10;
 		}
-		
-		if(price > pay) {
-			change=-change;
-			System.out.println("잔액 부족 : "+change+"원");
-		} else {	
-			System.out.println("거스름돈 : "+change+"원");
-			
-			if(change/500 < 8) {
-				w500=change/500;
-				change-=w500*500;
-			} else{
-				w500=8;
-				change-=w500*500;
-			}
-			if(change/100 < 30) {
-				w100=change/100;
-				change-=w100*100;
-			} else{
-				w100=30;
-				change-=w100*100;
-			}
-			w50=change/50;
-			w10=(change%50)/10;
-			
-			System.out.printf("500원/100원/50원/10원 : %d/%d/%d/%d", w500, w100, w50, w10);
-		}	
+	}
+	VendingMachine(int fiveHundredWon, int oneHundredWon){
+		CoinNumber[0]=fiveHundredWon;
+		CoinNumber[1]=oneHundredWon;
+		this.fiveHundredWon = fiveHundredWon;
+		this.oneHundredWon = oneHundredWon;
 	}
 }
 
-/*  출력 예제
-[1]
-  가격 : 1000, 지불 : 10001원
-  1만원 이하로 넣으세요
-[2]
-  가격 : 1000, 지불 : 10000원
-  거스름돈 : 9000원
-  500원/100원/50원/10원 : 8/30/40/0
-[3]
-  가격 : 1000, 지불 : 9999원
-  최소 단위가 10원인데???
-[4]
-  가격 : 1000, 지불 : 9990원
-  거스름돈 : 8990원
-  500원/100원/50원/10원 : 8/30/39/4
-[5]
-  가격 : 2200, 지불 : 4000원
-  거스름돈 : 1800원
-  500원/100원/50원/10원 : 3/3/0/0
-*/
+class Change{
+	static int[] CoinReturn = new int[2];
+	VendingMachine v; 
+	int last;
+	
+	Change(int input){
+		if(input/v.CoinUnit[0] > v.CoinNumber[0]) {
+			input -= v.CoinUnit[0]*v.CoinNumber[0];
+			CoinReturn[0] = v.CoinNumber[0];
+			v.CoinNumber[0] = 0;
+		} else {
+			CoinReturn[0] = input/v.CoinUnit[0];
+			v.CoinNumber[0] -= CoinReturn[0];
+			input %= v.CoinUnit[0];
+ 		}
+		if(input/v.CoinUnit[1] > v.CoinNumber[1]) {
+			input -= v.CoinUnit[1]*v.CoinNumber[1];
+			CoinReturn[1] = v.CoinNumber[1];
+			v.CoinNumber[1] = 0;
+		} else {
+			CoinReturn[1] = input/v.CoinUnit[1];
+			v.CoinNumber[1] -= CoinReturn[1];
+			input %= v.CoinUnit[1];
+ 		}
+		last=input;
+	}
+}
+
+public class VendingMachineChange{
+	
+	static { System.out.println("100원짜리 동전 나오면 사장님한테 연락ㄱㄱ (500원 동전 수량 부족한거임)."); }
+	static { System.out.println("거스르고 남은 돈은 좋은데 쓰겠습니다.\n"); }
+
+	public static void main(String[] args){
+		VendingMachine v = new VendingMachine(8, 10);  // 기계 내 500원짜리 10개, 100원짜리 8개
+		System.out.printf("500원 %d개, 100원 %d개 보유 (교환 전)\n", v.CoinNumber[0], v.CoinNumber[1]);
+		
+		int input = 8000;
+		System.out.println(input+"원 (투입)");
+		
+		Change c = new Change(input); 				   // 만원 넣음
+		System.out.printf("%d원 %d개, %d원 %d개 지급 (교환)\n", v.CoinUnit[0], c.CoinReturn[0], v.CoinUnit[1], c.CoinReturn[1]);
+		System.out.printf("500원 %d개, 100원 %d개 보유 (교환 후)\n", v.CoinNumber[0], v.CoinNumber[1]);
+		System.out.printf("꿀꺽냠냠 : %d원\n", c.last);
+	}
+}
