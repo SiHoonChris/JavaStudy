@@ -14,7 +14,7 @@ import java.util.Scanner;
 import java.util.Arrays;
 
 // ---------- Card ---------- //
-// Only One Constructor
+// Only One Constructor, No Methods
 class Card{
 	String pattern=""; // SPADE, CLOVER, DIAMOND, HEART (4)
 	String number="";  // A, 2~10, J, Q, K             (13)
@@ -37,10 +37,9 @@ class Card{
 } // end - class Card	
 
 // ---------- cardDeck ---------- //
-// Methods : cardsInTheBox , shuffle 
+// Methods : cardsInTheBox(), shuffle() 
 class cardDeck{
 	public static Card[] Deck = new Card[52];
-	
 	// 1. 카드 생성
 	public void cardsInTheBox(){
 		int idx=0;
@@ -50,7 +49,6 @@ class cardDeck{
 			}
 		}
 	}
-	
 	// 2. 카드 섞기
 	public void shuffle(){
 		for(int i=1; i<=1000; i++) {
@@ -60,69 +58,81 @@ class cardDeck{
 			Deck[r]=temp;
 		}
 	}
-	
 } // end - class cardDeck
 
 //---------- onTheTable ---------- //
+// Methods : converter(), getYourCards()  
 class onTheTable{
+	int[] gamingDeck = new int[52];
 	Scanner sc = new Scanner(System.in);
 	cardDeck cd = new cardDeck();
 	int choice=0;
 	int score;
 	
-	// 0. 점수 변환
-	private void conversion(String number) {
-		switch(number) { 
-			case "2" : score=2  ; break;
-			case "3" : score=3  ; break;
-			case "4" : score=4  ; break;
-			case "5" : score=5  ; break;
-			case "6" : score=6  ; break;
-			case "7" : score=7  ; break;
-			case "8" : score=8  ; break;
-			case "9" : score=9  ; break;
-			case "10": score=10 ; break;
-			case "J" : score=10 ; break;
-			case "Q" : score=10 ; break;
-			case "K" : score=10 ; break;
-			case "A" : 
-				if(choice==1) {score=1; }
-				if(choice==11){score=11;}
-				choice=0;
-				break;
-		}
+	// 0. 카드 재생성
+	// 점수 계산에 pattern 무쓸모. 그렇기에 number 내용만 가지고 덱(gamingDeck) 재생성
+	private void converter() {
+		for(int i=0; i<cd.Deck.length; i++) {
+			if(cd.Deck[i].number=="K"||cd.Deck[i].number=="Q"||cd.Deck[i].number=="J")
+				{ gamingDeck[i]=10; }
+			else if(cd.Deck[i].number=="A")
+				{ gamingDeck[i]=0; } // A에 대해서는 따로 작업 더 들어갈 예정(사용자 입력)
+			else
+				{ int num = Integer.parseInt(cd.Deck[i].number);
+				  gamingDeck[i]=num; }
+		}	
 	}
-
 	// 1. 카드 뿌리기
 	public void getYourCards() {
-		// 카드 지급할 때마나 count하기; count = Deck의 인덱스
-		// 카드가 Dealer배열과 User배열에 입력될 때마다 count증가
-		// A에 대한 판단은 사용자 입력(Scanner) 받기.
-		// conversion 메서드 대입시켜서, 카드가 주어짐과 동시에 점수 환산/계산해서 같이 전시
-
-		Card[] Dealer = new Card[12]; // 가장 작은 수로만 연달아 받는다 해도, 11장 받으면 21임.
-		Card[] User = new Card[12];   // 1+1+1+1 +2+2+2+2 +3+3+3 = 21
+		// 카드 지급 될 떄마다 count; count = Deck의 인덱스
+		int[] Dealer = new int[12];
+		int[] Player = new int[12];
 		
-		for(int i=0; i<=51; i++) {
-			System.out.print(cd.Deck[i].pattern);
-			System.out.print("-");
-			System.out.println(cd.Deck[i].number);
+		//딜러와 게이머는 순차적으로 카드를 하나씩 뽑아 각자 2개의 카드를 소지한다.
+		converter();
+		Dealer[0]=gamingDeck[0];
+		Player[0]=gamingDeck[1];
+		Dealer[1]=gamingDeck[2];
+		Player[1]=gamingDeck[3];
 		
-		System.out.println("[Dealer] =>  ");
-		System.out.println("  [User] =>  ");
-		}
+		System.out.printf("[%02d] [Dealer] =>  ", Dealer[0]+Dealer[1]);
+		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
+		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number);
+		System.out.println();
+		System.out.printf("[%02d] [Player] =>  ", Player[0]+Player[1]);
+		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
+		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number);
 	}
-	
 } // end - class onTheTable
+
+//게이머 : 얼마든지 카드를 추가로 뽑을 수 있다.
+//딜러 : 2카드의 합계 점수가 16점 이하이면 반드시 1장 추가, 17점 이상이면 No more card
 
 // ---------- Play Here ---------- // Main Class
 public class BlackjackADV{
+	
 	public static void main(String[] args){
 		cardDeck cd = new cardDeck();
+		onTheTable T = new onTheTable();
 		cd.cardsInTheBox();
 		cd.shuffle();
-
-			
+				
+		System.out.println("==========================================");
+		T.getYourCards();
+		
 	}
 } // end - public class BlackjackADV
+
+
+// 카드 확인용 코드(필요시에만 사용, main class에 넣어서 코드 실행)
+//T.converter();  //*접근제어자 public으로 전환 후 사용
+//for(int i=0; i<=51; i++) {
+//	System.out.print(cd.Deck[i].pattern);
+//	System.out.print("-");
+//	System.out.print(cd.Deck[i].number);
+//	System.out.println(" "+T.gamingDeck[i]);
+//}
+
+
+
 
