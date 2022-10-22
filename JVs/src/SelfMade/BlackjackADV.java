@@ -1,14 +1,12 @@
 package SelfMade;
-// 이전 블랙잭(BlackJack.java)보다 발전된
-// 1 on 1 ; 딜러 vs. 게이머
-// 카드는 조커 제외, 52장. 2~10은 숫자 그대로 , K/Q/J는 10 , A는 1이나 11 / 1-Deck Game
-// 딜러와 게이머는 순차적으로 카드를 하나씩 뽑아 각자 2개의 카드를 소지한다.
-// 게이머 : 얼마든지 카드를 추가로 뽑을 수 있다.
-// 딜러 : 2카드의 합계 점수가 16점 이하이면 반드시 1장 추가, 17점 이상이면 No more card
-// 소유한 카드의 합이 21에 가장 가까운 쪽이 승리한다. 단 21을 '초과'하면 초과한 쪽이 진다(Bust)
 // 코드 작성 간 주의사항
 // 1) 모든 요소는 객체화를 시켜서 관리한다.
 // 2) 하나의 메소드에는 하나의 역할만 존재해야한다.
+
+// To do...
+// 플레이어의 Hit&Stay 선택 시, 딜러의 카드가 2장인지 3장인지에 따라 코드 달라져야 할 것 - 아니면 다른 무언가를 더 하거나
+// 카드가 52장 다 소모될 때까지 반복하기
+// 게임 종료 멘트 & 게임 중 현황 표시(몇 번째 턴인지, 현재 전적, 남은 카드 장 수)
 
 import java.util.Scanner;
 import java.util.Arrays;
@@ -61,7 +59,7 @@ class cardDeck{
 } // end - class cardDeck
 
 //---------- onTheTable ---------- //
-// Methods : converter(), getYourCards(), whatIsYourAce(), *** HIT & STAY 구현하기!!! ***
+// Methods : converter(), getYourCards(), whatIsYourAce()
 class onTheTable{
 	int[] gamingDeck = new int[52];
 	int[] Dealer = new int[12];
@@ -89,48 +87,54 @@ class onTheTable{
 	}
 	// 1. 카드 뿌리기
 	public void getYourCards() {
-		//게이머 : 얼마든지 카드를 추가로 뽑을 수 있다.(HIT or STAY)
-		//딜러 : 2카드의 합계 점수가 16점 이하이면 반드시 1장 추가, 17점 이상이면 No more card
-		// 카드 지급 될 떄마다 count; count = Deck의 인덱스
-		
-		//딜러와 게이머는 순차적으로 카드를 하나씩 뽑아 각자 2개의 카드를 소지한다.
+		// 카드 전환 : Deck => gamingDeck
 		converter();
-		Dealer[0]=gamingDeck[0];
-		Player[0]=gamingDeck[1];
-		Dealer[1]=gamingDeck[2];
-		Player[1]=gamingDeck[3];
+		// 카드는 순서대로 번갈아 지급
+		Player[0]=gamingDeck[0];
+		Dealer[0]=gamingDeck[1];
+		Player[1]=gamingDeck[2];
+		Dealer[1]=gamingDeck[3];
 		
 		// 딜러 파트
-		// 딜러 카드는 자동계산 : 처음 두 카드의 합 11이하 & 그 중 하나가 A => 11로 변환 / 아니면 그대로 1
-		if(Dealer[0]+Dealer[1]<=11)
-		{   if(cd.Deck[0].number=="A") Dealer[0]=11;
-			else if(cd.Deck[2].number=="A") Dealer[1]=11;
-			else if(cd.Deck[0].number=="A"&&cd.Deck[2].number=="A") Dealer[0]=11; }
+		// A에 대한 값 선택은 최대한 유리하게.
+		if(Dealer[0]+Dealer[1]<=11 && (cd.Deck[1].number=="A" || cd.Deck[3].number=="A"))
+		{   if(cd.Deck[1].number=="A") Dealer[0]=11;
+			else if(cd.Deck[3].number=="A") Dealer[1]=11;
+			else if(cd.Deck[1].number=="A"&&cd.Deck[3].number=="A") Dealer[0]=11; }
+		// A값 설정 후 2장의 카드 점수 합계가 16점 이하이면 1장 추가(Hit), 17점 이상이면 Stay
+		if(Dealer[0]+Dealer[1]<=16) { Dealer[2]=gamingDeck[4]; }
+		// 세 번째 카드가 A인 경우
+		if(cd.Deck[4].number=="A" && Dealer[0]+Dealer[1]<=11) { Dealer[2]=11; }
+		// 카드 내용 출력
 		System.out.print("[Dealer] =>  ");
-		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
-		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
+		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
+		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number +(Dealer[2]!=0 ? "\t" : "\n"));
+		if(Dealer[2] != 0) {System.out.print(cd.Deck[4].pattern+"-"+cd.Deck[4].number+"\n");} 
 		System.out.printf("=> [%02d]", Arrays.stream(Dealer).sum());
 		System.out.println();
 		
-		// 플레이어 파트
+		// 플레이어 파트  *게이머(플레이어) : 얼마든지 카드를 추가로 뽑을 수 있다.(HIT or STAY)
+		// 카드 내용 출력
 		System.out.print("[Player] =>  ");
-		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
-		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number+"\n");
-		if(cd.Deck[1].number=="A"||cd.Deck[3].number=="A") { whatIsYourAce(); }
+		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
+		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
+		// A값 설정
+		if(cd.Deck[0].number=="A"||cd.Deck[2].number=="A") { whatIsYourAce(); }
+		// 카드 내용 출력
 		System.out.printf("=> [%02d]", Arrays.stream(Player).sum());
 		System.out.println();
 		
 		// 게임 결과 출력
-		System.out.println("==========================================");
+		System.out.println("===============================================");
 		whoWins();
 	}
 	// 2. A값 선택
 	private void whatIsYourAce() {
 		System.out.print("1 or 11 ? =>  ");
 		int Answer = sc.nextInt();
-		if(cd.Deck[1].number=="A" && Answer==11) { Player[0]=11; }
-		else if(cd.Deck[3].number=="A" && Answer==11) { Player[1]=11; }
-		else if(cd.Deck[1].number=="A" && cd.Deck[3].number=="A" && Answer==11)
+		if(cd.Deck[0].number=="A" && Answer==11) { Player[0]=11; }
+		else if(cd.Deck[2].number=="A" && Answer==11) { Player[1]=11; }
+		else if(cd.Deck[0].number=="A" && cd.Deck[2].number=="A" && Answer==11)
 		{ Player[0]=11; }
 	}
 	
@@ -162,8 +166,7 @@ public class BlackjackADV{
 		cd.cardsInTheBox();
 		cd.shuffle();
 		
-//		System.out.println("Turn 3                        LAST : 34/52");
-		System.out.println("==========================================");
+		System.out.println("===============================================");
 		T.getYourCards();
 		
 	}
