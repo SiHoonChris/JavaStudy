@@ -3,11 +3,6 @@ package SelfMade;
 // 1) 모든 요소는 객체화를 시켜서 관리한다.
 // 2) 하나의 메소드에는 하나의 역할만 존재해야한다.
 
-// To do...
-// 플레이어의 Hit&Stay 선택 시, 딜러의 카드가 2장인지 3장인지에 따라 코드 달라져야 할 것 - 아니면 다른 무언가를 더 하거나
-// 카드가 52장 다 소모될 때까지 반복하기
-// 게임 종료 멘트 & 게임 중 현황 표시(몇 번째 턴인지, 현재 전적, 남은 카드 장 수)
-
 import java.util.Scanner;
 import java.util.Arrays;
 
@@ -59,10 +54,10 @@ class cardDeck{
 } // end - class cardDeck
 
 //---------- onTheTable ---------- //
-// Methods : converter(), getYourCards(), whatIsYourAce()
+// Methods : converter(), getYourCards(), whatIsYourAce(), hitOrStay(), whoWins();
 class onTheTable{
 	int[] gamingDeck = new int[52];
-	int[] Dealer = new int[12];
+	int[] Dealer = new int[3];
 	int[] Player = new int[12];
 	int Dealer_scr;
 	int Player_scr;
@@ -73,13 +68,12 @@ class onTheTable{
 	int score;
 	
 	// 0. 카드 재생성
-	// 점수 계산에 pattern 무쓸모. 그렇기에 number 내용만 가지고 덱(gamingDeck) 재생성
 	private void converter() {
 		for(int i=0; i<cd.Deck.length; i++) {
 			if(cd.Deck[i].number=="K"||cd.Deck[i].number=="Q"||cd.Deck[i].number=="J")
 				{ gamingDeck[i]=10; }
 			else if(cd.Deck[i].number=="A")
-				{ gamingDeck[i]=1; } // A에 대해서는 따로 작업 더 들어갈 예정(사용자 입력)
+				{ gamingDeck[i]=1; }
 			else
 				{ int num = Integer.parseInt(cd.Deck[i].number);
 				  gamingDeck[i]=num; }
@@ -87,25 +81,20 @@ class onTheTable{
 	}
 	// 1. 카드 뿌리기
 	public void getYourCards() {
-		// 카드 전환 : Deck => gamingDeck
 		converter();
-		// 카드는 순서대로 번갈아 지급
 		Player[0]=gamingDeck[0];
 		Dealer[0]=gamingDeck[1];
 		Player[1]=gamingDeck[2];
 		Dealer[1]=gamingDeck[3];
 		
 		// 딜러 파트
-		// A에 대한 값 선택은 최대한 유리하게.
 		if(Dealer[0]+Dealer[1]<=11 && (cd.Deck[1].number=="A" || cd.Deck[3].number=="A"))
 		{   if(cd.Deck[1].number=="A") Dealer[0]=11;
 			else if(cd.Deck[3].number=="A") Dealer[1]=11;
 			else if(cd.Deck[1].number=="A"&&cd.Deck[3].number=="A") Dealer[0]=11; }
-		// A값 설정 후 2장의 카드 점수 합계가 16점 이하이면 1장 추가(Hit), 17점 이상이면 Stay
 		if(Dealer[0]+Dealer[1]<=16) { Dealer[2]=gamingDeck[4]; }
-		// 세 번째 카드가 A인 경우
-		if(cd.Deck[4].number=="A" && Dealer[0]+Dealer[1]<=11) { Dealer[2]=11; }
-		// 카드 내용 출력
+		if(cd.Deck[4].number=="A" && Dealer[0]+Dealer[1]<11) { Dealer[2]=11; }
+
 		System.out.print("[Dealer] =>  ");
 		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
 		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number +(Dealer[2]!=0 ? "\t" : "\n"));
@@ -113,18 +102,17 @@ class onTheTable{
 		System.out.printf("=> [%02d]", Arrays.stream(Dealer).sum());
 		System.out.println();
 		
-		// 플레이어 파트  *게이머(플레이어) : 얼마든지 카드를 추가로 뽑을 수 있다.(HIT or STAY)
-		// 카드 내용 출력
+		// 플레이어 파트
 		System.out.print("[Player] =>  ");
 		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
 		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
-		// A값 설정
 		if(cd.Deck[0].number=="A"||cd.Deck[2].number=="A") { whatIsYourAce(); }
-		// 카드 내용 출력
+		
+		// HIT or STAY 결정
+		hitOrStay();
+
 		System.out.printf("=> [%02d]", Arrays.stream(Player).sum());
 		System.out.println();
-		
-		// 게임 결과 출력
 		System.out.println("===============================================");
 		whoWins();
 	}
@@ -137,8 +125,45 @@ class onTheTable{
 		else if(cd.Deck[0].number=="A" && cd.Deck[2].number=="A" && Answer==11)
 		{ Player[0]=11; }
 	}
+	private void whatIsYourAce(int n) {
+		System.out.print("1 or 11 ? =>  ");
+		int Answer = sc.nextInt();
+		if(Answer==11) {Player[n]=11;}
+		else 		   { return;}
+	}
 	
-	// 3. 승무패 결과
+	// 3. 플레이어 HIT/STAY  *게이머(플레이어) : 얼마든지 카드를 추가로 뽑을 수 있다.(HIT or STAY)
+	private void hitOrStay() {
+		if(Dealer[2]==0) {  // Dealer가 세 번째 카드 받지 않음
+			int num=2;
+			for(int i=4 ; ; i++) {
+				System.out.print("HIT or STAY ? =>  ");
+				String select = sc.next();
+					if(select.equals("HIT")) { // HIT 입력 시, 카드 부여				
+						Player[num]=gamingDeck[i];
+						System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
+						if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
+						num++;
+					} else if(select.equals("STAY")) { return; } // STAY 입력 시, 카드 부여 안하고 반복문 종료
+				if(Arrays.stream(Player).sum()>21) { return; }  // Player가 받은 카드의 합이 21을 넘으면 bust, 자동으로 게임 종료
+			}
+		}
+		else {  // Dealer가 세 번째 카드 받지 않음
+			int num=2;
+			for(int i=5 ; ; i++) {
+				System.out.print("HIT or STAY ? =>  ");
+				String select = sc.next();
+					if(select.equals("HIT")) {						
+						Player[num]=gamingDeck[i];
+						System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
+						if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
+						num++;
+					} else if(select.equals("STAY")) { return; }
+				if(Arrays.stream(Player).sum()>21) { return; }
+			}
+		}
+	}
+	// 4. 승무패 결과
 	private void whoWins() {
 		Dealer_scr=Arrays.stream(Dealer).sum();
 		Player_scr=Arrays.stream(Player).sum();
@@ -154,8 +179,17 @@ class onTheTable{
 			else { System.out.println("- DRAW -"); }
 		}
 	}
-	
 } // end - class onTheTable
+
+//---------- game ---------- //
+// Methods : 
+class inTheGame{
+	public void cardsLeftInTheDeck() {}
+	// To do...
+	// 카드가 52장 다 소모될 때까지 반복하기
+	// (굳이 배열 안건들이고, 변수 52로 초기화 해놓고 카드 주어질 때마다 카운해서 빼면 될듯)
+	// 게임 종료 멘트 & 게임 중 현황 표시(몇 번째 턴인지, 현재 전적, 남은 카드 장 수)	
+} // end - public class gameMustGoOn
 
 // ---------- Play Here ---------- // Main Class
 public class BlackjackADV{
@@ -164,10 +198,13 @@ public class BlackjackADV{
 		cardDeck cd = new cardDeck();
 		onTheTable T = new onTheTable();
 		cd.cardsInTheBox();
-		cd.shuffle();
-		
+		cd.shuffle();	
+	
 		System.out.println("===============================================");
 		T.getYourCards();
+		
+//		System.out.println(Arrays.toString(T.Dealer));  // 배열(받은 카드 내역) 확인
+//		System.out.println(Arrays.toString(T.Player));  // 배열(받은 카드 내역) 확인
 		
 	}
 } // end - public class BlackjackADV
