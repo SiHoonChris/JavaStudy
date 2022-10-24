@@ -219,12 +219,14 @@ public class BlackjackADV{
 	
 		System.out.println("===============================================");
 		T.getYourCards();
-//		System.out.println(Arrays.toString(T.Dealer));  // 배열(받은 카드 내역) 확인
-//		System.out.println(Arrays.toString(T.Player));  // 배열(받은 카드 내역) 확인
 		
 	}
 } // end - public class BlackjackADV
 
+
+
+//		System.out.println(Arrays.toString(T.Dealer));  // 배열(받은 카드 내역) 확인
+//		System.out.println(Arrays.toString(T.Player));  // 배열(받은 카드 내역) 확인
 
 // 카드 확인용 코드(필요시에만 사용, main class에 넣어서 코드 실행)
 //T.converter();  //*접근제어자 public으로 전환 후 사용
