@@ -27,12 +27,14 @@ class Card{
 		default: number=y+"";
 		}
 	}
+	
 } // end - class Card	
 
 // ---------- cardDeck ---------- //
 // Methods : cardsInTheBox(), shuffle() 
 class cardDeck{
 	public static Card[] Deck = new Card[52];
+	
 	// 1. 카드 생성
 	public void cardsInTheBox(){
 		int idx=0;
@@ -42,6 +44,7 @@ class cardDeck{
 			}
 		}
 	}
+	
 	// 2. 카드 섞기
 	public void shuffle(){
 		for(int i=1; i<=1000; i++) {
@@ -51,6 +54,7 @@ class cardDeck{
 			Deck[r]=temp;
 		}
 	}
+	
 } // end - class cardDeck
 
 //---------- onTheTable ---------- //
@@ -61,16 +65,15 @@ class onTheTable{
 	int[] Player = new int[12];
 	int Dealer_scr;
 	int Player_scr;
-	
-	Scanner sc = new Scanner(System.in);
-	cardDeck cd = new cardDeck();
 	int choice=0;
 	int score;
 	
+	Scanner sc = new Scanner(System.in);
+	cardDeck cd = new cardDeck();
 	inTheGame G = new inTheGame();
-	
+		
 	// 0. 카드 재생성
-	private void converter() {
+	public int[] converter() {  // private
 		for(int i=0; i<cd.Deck.length; i++) {
 			if(cd.Deck[i].number=="K"||cd.Deck[i].number=="Q"||cd.Deck[i].number=="J")
 				{ gamingDeck[i]=10; }
@@ -80,10 +83,12 @@ class onTheTable{
 				{ int num = Integer.parseInt(cd.Deck[i].number);
 				  gamingDeck[i]=num; }
 		}
+		return gamingDeck;
 	}
+	
 	// 1. 카드 뿌리기
 	public void getYourCards() {
-		converter();
+//		converter();
 		Player[0]=gamingDeck[0];
 		Dealer[0]=gamingDeck[1];
 		Player[1]=gamingDeck[2];
@@ -116,9 +121,10 @@ class onTheTable{
 		System.out.println();
 		System.out.print("*RESULT* => ");
 		
+		// 매치 결과
 		whoWins();
-		
 	}
+	
 	// 2. A값 선택
 	private void whatIsYourAce() {
 		System.out.print("1 or 11 ? =>  ");
@@ -134,6 +140,7 @@ class onTheTable{
 		if(Answer==11) {Player[n]=11;}
 		else 		   { return;}
 	}
+	
 	// 3. 플레이어 카드 추가
 	private void hitOrStay() {
 		if(Dealer[2]==0) {
@@ -165,6 +172,7 @@ class onTheTable{
 			}
 		}
 	}
+	
 	// 4. 승무패 결과
 	private void whoWins() {
 		Dealer_scr=Arrays.stream(Dealer).sum();
@@ -181,14 +189,16 @@ class onTheTable{
 			else { System.out.println("- DRAW -"); }
 		}
 	}
+	
 } // end - class onTheTable
 
 //---------- game ---------- //
-// Methods : cardsLeftInTheDeck(), infoOfMatch()
+// Methods : cardsLeftInTheDeck(), renewTheCards()
 class inTheGame{
 	int cardRemain = cardDeck.Deck.length;
-	
+	int cnt = 0; // renewTheCards()에 사용, 한 턴에 사용한 카드 장 수 누적
 	onTheTable T;
+	
 	// 0. 남은 카드 장 수 계산
 	public int cardsLeftInTheDeck(int[] Dealer, int[] Player) {
 		int dealerUsed=0;
@@ -196,24 +206,29 @@ class inTheGame{
 		for(int i=0; i<Dealer.length; i++) { if(Dealer[i]!=0) dealerUsed++; }
 		for(int i=0; i<Player.length; i++) { if(Player[i]!=0) playerUsed++; }
 		
-		System.out.println(playerUsed);
-		System.out.println(dealerUsed);
-		
+		// 메인메서드에서의 반복문 사용으로 인해, Dealer배열과 Player배열의 Length가 고정되어 변하지 않는 문제 발생. 해결
+		for(int i=0; i<Dealer.length; i++) { Dealer[i]=0; }
+		for(int i=0; i<Player.length; i++) { Player[i]=0; }
+
 		cardRemain -= (dealerUsed+playerUsed);
-		System.out.println("남은 카드 : "+cardRemain);
+		System.out.println("( 남은 카드 : "+cardRemain+" )");	
 		
-		return cardRemain;
+		return dealerUsed+playerUsed;
 	}
+	
 	// 1. 카드 덱 갱신
-//	public void renewTheCards() {
-//		
-//	}
-	
-	
-	public void infoOfMatch() {
-		// 게임 종료 멘트 & 게임 중 현황 표시(몇 번째 턴인지, 현재 전적, 남은 카드 장 수)	
-		System.out.println(cardDeck.Deck.length);
+	public void renewTheCards(int[] ar1, Card[] ar2, int num) { // 세번째 매개변수는 한 턴에 사용한 카드 장 수 
+		cnt += num;
+		for(int i=0; i<ar1.length; i++) {
+			if(i<ar1.length-cnt) {
+				ar1[i]=ar1[i+num];
+				ar2[i]=ar2[i+num]; }
+			else { 
+				ar1[i]=0;
+				ar2[i]=null;}
+		}
 	}
+	
 } // end - public class gameMustGoOn
 
 // ---------- Play Here ---------- // Main Class
@@ -223,31 +238,23 @@ public class BlackjackADV{
 		cardDeck cd = new cardDeck();
 		onTheTable T = new onTheTable();
 		inTheGame G = new inTheGame();
+		
 		cd.cardsInTheBox();
 		cd.shuffle();
+		T.converter();
+		int totalCards = cd.Deck.length;
+		int matchCnt = 0;
 		
-		while(true) {			
-			System.out.println("===============================================");
+		while(true) {		
+			matchCnt++;
+			System.out.println("==================== Match "+matchCnt+" ====================");
 			T.getYourCards();
-			int turn = G.cardsLeftInTheDeck(T.Dealer, T.Player);
-			if(turn<4) {
-				System.out.println("\n카드 수 부족으로 인한 게임 종료!");
+			int cardsUsed = G.cardsLeftInTheDeck(T.Dealer, T.Player);
+			G.renewTheCards(T.gamingDeck, cd.Deck, cardsUsed);
+			if(totalCards-cardsUsed<4) {
+				System.out.println("\n(카드 수 부족 또는 전체 카드 사용) 게임 종료!");
 				break;
 			}
 		}
 	}
 } // end - public class BlackjackADV
-
-
-
-//		System.out.println(Arrays.toString(T.Dealer));  // 배열 확인
-//		System.out.println(Arrays.toString(T.Player));  // 배열 확인
-
-// 카드 확인용 코드(필요시에만 사용, main class에 넣어서 코드 실행)
-//T.converter();  //*접근제어자 public으로 전환 후 사용
-//for(int i=0; i<=51; i++) {
-//	System.out.print(cd.Deck[i].pattern);
-//	System.out.print("-");
-//	System.out.print(cd.Deck[i].number);
-//	System.out.println(" "+T.gamingDeck[i]);
-//}
