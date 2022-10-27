@@ -1,11 +1,8 @@
 package SelfMade;
-// 코드 작성 간 주의사항
-// 1) 모든 요소는 객체화를 시켜서 관리한다.
-// 2) 하나의 메소드에는 하나의 역할만 존재해야한다.
+
 
 import java.util.Scanner;
 import java.util.Arrays;
-
 // ---------- Card ---------- //
 // Only One Constructor, No Methods
 class Card{
@@ -58,7 +55,7 @@ class cardDeck{
 } // end - class cardDeck
 
 //---------- onTheTable ---------- //
-// Methods : converter(), getYourCards(), whatIsYourAce(), hitOrStay(), whoWins();
+// Methods : converter(), getYourCards(), whatIsYourAce(), hitOrStay(), whoWins(), finalMatch()
 class onTheTable{
 	int[] gamingDeck = new int[52];
 	int[] Dealer = new int[3];
@@ -67,6 +64,7 @@ class onTheTable{
 	int Player_scr;
 	int choice=0;
 	int score;
+	int matchCnt=0;
 	
 	Scanner sc = new Scanner(System.in);
 	cardDeck cd = new cardDeck();
@@ -88,41 +86,60 @@ class onTheTable{
 	
 	// 1. 카드 뿌리기
 	public void getYourCards() {
-//		converter();
-		Player[0]=gamingDeck[0];
-		Dealer[0]=gamingDeck[1];
-		Player[1]=gamingDeck[2];
-		Dealer[1]=gamingDeck[3];
+		try {
+			Player[0]=gamingDeck[0];
+			Dealer[0]=gamingDeck[1];
+			Player[1]=gamingDeck[2];
+			Dealer[1]=gamingDeck[3];
+			
+			// 딜러 파트
+			if(Dealer[0]+Dealer[1]<=11 && (cd.Deck[1].number=="A" || cd.Deck[3].number=="A"))
+			{   if(cd.Deck[1].number=="A") Dealer[0]=11;
+				else if(cd.Deck[3].number=="A") Dealer[1]=11;
+				else if(cd.Deck[1].number=="A"&&cd.Deck[3].number=="A") Dealer[0]=11; }
+			if(Dealer[0]+Dealer[1]<=16) { Dealer[2]=gamingDeck[4]; }
+			if(cd.Deck[4].number=="A" && Dealer[0]+Dealer[1]<11) { Dealer[2]=11; }
+	
+			matchCnt++;
+			System.out.println("==================== Match "+matchCnt+" ====================");
+	
+			System.out.print("[Dealer] =>  ");
+			System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
+			System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number +(Dealer[2]!=0 ? "\t" : "\n"));
+			if(Dealer[2] != 0) {System.out.print(cd.Deck[4].pattern+"-"+cd.Deck[4].number+"\n");} 
+			System.out.printf("=> [%02d]", Arrays.stream(Dealer).sum());
+			System.out.println();
+			
+			// 플레이어 파트
+			System.out.print("[Player] =>  ");
+			System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
+			System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
+			if(cd.Deck[0].number=="A"||cd.Deck[2].number=="A") { whatIsYourAce(); }
+			
+			hitOrStay();
+	
+			System.out.printf("=> [%02d]", Arrays.stream(Player).sum());
+			System.out.println();
+			System.out.print("*RESULT* => ");
+			
+			// 매치 결과
+			whoWins();
+		} catch(NullPointerException e) {
+			int lastCards=0;
+			for(int i=0; i<cardDeck.Deck.length; i++) { if(cardDeck.Deck[i]!=null) lastCards++; }
+			
+			if(lastCards==4) { 
+				System.out.printf("==================== Match %d ====================\n", ++matchCnt);
+				finalMatch();
+			}
+			
+			System.out.println("\n==========================================");
+			System.out.println("[ GAME END! ] (카드 수 부족 또는 전체 카드 사용) ");
+			System.out.println("             - THANK YOU -");
+			System.out.println("==========================================");
+			System.exit(0);
+		}
 		
-		// 딜러 파트
-		if(Dealer[0]+Dealer[1]<=11 && (cd.Deck[1].number=="A" || cd.Deck[3].number=="A"))
-		{   if(cd.Deck[1].number=="A") Dealer[0]=11;
-			else if(cd.Deck[3].number=="A") Dealer[1]=11;
-			else if(cd.Deck[1].number=="A"&&cd.Deck[3].number=="A") Dealer[0]=11; }
-		if(Dealer[0]+Dealer[1]<=16) { Dealer[2]=gamingDeck[4]; }
-		if(cd.Deck[4].number=="A" && Dealer[0]+Dealer[1]<11) { Dealer[2]=11; }
-
-		System.out.print("[Dealer] =>  ");
-		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
-		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number +(Dealer[2]!=0 ? "\t" : "\n"));
-		if(Dealer[2] != 0) {System.out.print(cd.Deck[4].pattern+"-"+cd.Deck[4].number+"\n");} 
-		System.out.printf("=> [%02d]", Arrays.stream(Dealer).sum());
-		System.out.println();
-		
-		// 플레이어 파트
-		System.out.print("[Player] =>  ");
-		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
-		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
-		if(cd.Deck[0].number=="A"||cd.Deck[2].number=="A") { whatIsYourAce(); }
-		
-		hitOrStay();
-
-		System.out.printf("=> [%02d]", Arrays.stream(Player).sum());
-		System.out.println();
-		System.out.print("*RESULT* => ");
-		
-		// 매치 결과
-		whoWins();
 	}
 	
 	// 2. A값 선택
@@ -148,13 +165,16 @@ class onTheTable{
 			for(int i=4 ; ; i++) {
 				System.out.print("HIT or STAY ? =>  ");
 				String select = sc.next();
-					if(select.equals("HIT")) {		
-						Player[num]=gamingDeck[i];
-						System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
-						if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
-						num++;
+					if(select.equals("HIT")) {
+						if(gamingDeck[i]!=0) {
+							Player[num]=gamingDeck[i];
+							System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
+							if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
+							num++;
+						}
+						else { return; }
 					} else if(select.equals("STAY")) { return; }
-				if(Arrays.stream(Player).sum()>21) { return; }
+				if(Arrays.stream(Player).sum()>21) { return; }				
 			}
 		}
 		else {
@@ -163,10 +183,13 @@ class onTheTable{
 				System.out.print("HIT or STAY ? =>  ");
 				String select = sc.next();
 					if(select.equals("HIT")) {						
-						Player[num]=gamingDeck[i];
-						System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
-						if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
-						num++;
+						if(gamingDeck[i]!=0) {
+							Player[num]=gamingDeck[i];
+							System.out.print(cd.Deck[i].pattern+"-"+cd.Deck[i].number+"\n");
+							if(cd.Deck[i].number=="A") { whatIsYourAce(num); }
+							num++;
+						} 
+						else { return; }
 					} else if(select.equals("STAY")) { return; }
 				if(Arrays.stream(Player).sum()>21) { return; }
 			}
@@ -188,6 +211,32 @@ class onTheTable{
 			else if(Player_scr>21 && Dealer_scr<=21) { System.out.println("[Dealer] WIN!"); }
 			else { System.out.println("- DRAW -"); }
 		}
+	}
+	
+	// 5. 남은 카드가 4장일 때 자동으로 실행되는 메서드
+	private void finalMatch() {
+		Player[0]=gamingDeck[0];
+		Dealer[0]=gamingDeck[1]; 
+		Player[1]=gamingDeck[2];
+		Dealer[1]=gamingDeck[3];
+		
+		System.out.print("[Dealer] =>  ");
+		System.out.print(cd.Deck[1].pattern+"-"+cd.Deck[1].number+"\t");
+		System.out.print(cd.Deck[3].pattern+"-"+cd.Deck[3].number +(Dealer[2]!=0 ? "\t" : "\n"));
+		if(Dealer[2] != 0) {System.out.print(cd.Deck[4].pattern+"-"+cd.Deck[4].number+"\n");} 
+		System.out.printf("=> [%02d]", Arrays.stream(Dealer).sum());
+		System.out.println();
+		
+		System.out.print("[Player] =>  ");
+		System.out.print(cd.Deck[0].pattern+"-"+cd.Deck[0].number+"\t");
+		System.out.print(cd.Deck[2].pattern+"-"+cd.Deck[2].number+"\n");
+		if(cd.Deck[0].number=="A"||cd.Deck[2].number=="A") { whatIsYourAce(); }
+		System.out.printf("=> [%02d]", Arrays.stream(Player).sum());
+		System.out.println();
+		
+		System.out.print("*RESULT* => ");
+		whoWins();
+		System.out.println("( 남은 카드 : 0 )");
 	}
 	
 } // end - class onTheTable
@@ -243,18 +292,11 @@ public class BlackjackADV{
 		cd.shuffle();
 		T.converter();
 		int totalCards = cd.Deck.length;
-		int matchCnt = 0;
 		
-		while(true) {		
-			matchCnt++;
-			System.out.println("==================== Match "+matchCnt+" ====================");
+		while(true) {
 			T.getYourCards();
 			int cardsUsed = G.cardsLeftInTheDeck(T.Dealer, T.Player);
 			G.renewTheCards(T.gamingDeck, cd.Deck, cardsUsed);
-			if(totalCards-cardsUsed<4) {
-				System.out.println("\n(카드 수 부족 또는 전체 카드 사용) 게임 종료!");
-				break;
-			}
 		}
 	}
 } // end - public class BlackjackADV
