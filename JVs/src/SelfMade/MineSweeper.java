@@ -6,7 +6,7 @@ import java.awt.event.*;
 // --------------- MineSweeper --------------- //
 public class MineSweeper extends JFrame {
 	final int SIZE=9;  // 10x10 사이즈 
-	JButton[] mineOrNot;                            // 선택 배열(버튼)
+	JButton[][] mineOrNot;                            // 선택 배열(버튼)
 	String[][] mineField = new String[SIZE][SIZE];  // 지뢰 위치 저장 배열
 	String[] whatIsMine = {"◎",""};                 // 지뢰 모양 - mineInstall()
 	
@@ -32,12 +32,14 @@ public class MineSweeper extends JFrame {
 		mineInstall();
 		
 		setLayout(new GridLayout(SIZE,SIZE));
-		mineOrNot = new JButton[SIZE*SIZE];
-		for(int i=0; i<SIZE*SIZE ; i++) {		
-			mineOrNot[i] = new JButton("");
-			mineOrNot[i].setBackground(Color.LIGHT_GRAY);
-			mineOrNot[i].addActionListener(new MyActionListener());
-			add(mineOrNot[i]);
+		mineOrNot = new JButton[SIZE][SIZE];
+		for(int i=0; i<SIZE ; i++) {
+			for(int j=0; j<SIZE ; j++) {
+				mineOrNot[i][j] = new JButton("");
+				mineOrNot[i][j].setBackground(Color.LIGHT_GRAY);
+				mineOrNot[i][j].addActionListener(new MyActionListener());
+				add(mineOrNot[i][j]);
+			}
 		}
 		
 		setBounds(500,200,500,500);
@@ -54,25 +56,45 @@ public class MineSweeper extends JFrame {
 		
 		public void actionPerformed(ActionEvent e) {
 			JButton btn = (JButton)e.getSource();
-			for(int i=0; i<SIZE*SIZE; i++) {
-				if(btn==mineOrNot[i]) {
-					mineOrNot[i].setFont(new Font("MS Gothic", Font.BOLD, 15));
-					mineOrNot[i].setText(mineField[i/SIZE][i%SIZE]);
-					if(mineField[i/SIZE][i%SIZE].equals("◎")) {
-						mineOrNot[i].setBackground(Color.RED);
-						steppedOnTheMine();
-					} else  mineOrNot[i].setBackground(Color.GRAY);
+			for(int i=0; i<SIZE; i++) {
+				for(int j=0; j<SIZE; j++) {					
+					if(btn==mineOrNot[i][j]) {
+						mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
+						mineOrNot[i][j].setText(mineField[i][j]);
+						if(mineField[i][j].equals("◎")) {
+							mineOrNot[i][j].setBackground(Color.RED);
+							steppedOnTheMine();
+						} else  mineOrNot[i][j].setBackground(Color.GRAY);
+						numberOfMine(i,j);
+					}
 				}
 			}
 		} // END - public void actionPerformed(ActionEvent e)
 	
 		public void steppedOnTheMine(){ // 지뢰 밟으면 게임 종료(전체 지뢰 위치 보여줌)
-			for(int i=0; i<SIZE*SIZE; i++)
-			{   mineOrNot[i].setFont(new Font("MS Gothic", Font.BOLD, 15));
-				mineOrNot[i].setText(mineField[i/SIZE][i%SIZE]);
-				if(mineField[i/SIZE][i%SIZE].equals("◎"))  mineOrNot[i].setBackground(Color.RED);
-				else  mineOrNot[i].setBackground(Color.GRAY);	}
+			for(int i=0; i<SIZE; i++){
+				for(int j=0; j<SIZE; j++) {					
+					mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
+					mineOrNot[i][j].setText(mineField[i][j]);
+					if(mineField[i][j].equals("◎"))  mineOrNot[i][j].setBackground(Color.RED);
+					else  mineOrNot[i][j].setBackground(Color.GRAY);
+				}
+			}
 		} // END - public void steppedOnTheMine()
+		
+		public void numberOfMine(int row, int col) { // 클릭한 지점을 기준으로 확장한 후, 주위 칸에 지뢰가 몇개 있는지 표시  
+			int[] rows= {row-1, row, row+1};
+			int[] cols= {col-1, col, col+1};
+			
+			for(int i=0; i<rows.length; i++){
+				for(int j=0; j<cols.length; j++) {
+					if(rows[i]<0||rows[i]>8||cols[j]<0||cols[j]>8) break;
+					else mineOrNot[rows[i]][cols[j]].setBackground(Color.GRAY);
+				}
+			}
+			
+			
+		} // END - public void numberOfMine()
 	
 	} // END - class MyActionListener implements ActionListener{}
 		
