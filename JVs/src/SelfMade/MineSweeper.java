@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 // --------------- MineSweeper --------------- //
 public class MineSweeper extends JFrame {
-	final int SIZE=9;  // 10x10 사이즈 
+	final int SIZE=9;  // 9x9 사이즈 
 	JButton[][] mineOrNot;                            // 선택 배열(버튼)
 	String[][] mineField = new String[SIZE][SIZE];  // 지뢰 위치 저장 배열
 	String[] whatIsMine = {"◎",""};                 // 지뢰 모양 - mineInstall()
@@ -64,8 +64,11 @@ public class MineSweeper extends JFrame {
 						if(mineField[i][j].equals("◎")) {
 							mineOrNot[i][j].setBackground(Color.RED);
 							steppedOnTheMine();
-						} else  mineOrNot[i][j].setBackground(Color.GRAY);
-						numberOfMine(i,j);
+						}
+						else {
+							mineOrNot[i][j].setBackground(Color.GRAY);
+							numberOfMine(i,j);
+						}
 					}
 				}
 			}
@@ -83,19 +86,31 @@ public class MineSweeper extends JFrame {
 		} // END - public void steppedOnTheMine()
 		
 		public void numberOfMine(int row, int col) { // 클릭한 지점을 기준으로 확장한 후, 주위 칸에 지뢰가 몇개 있는지 표시  
-			int[] rows= {row-1, row, row+1};
-			int[] cols= {col-1, col, col+1};
-			
+			int[] rows = {row-1, row, row+1};
+			int[] cols = {col-1, col, col+1};
 			for(int i=0; i<rows.length; i++){
-				for(int j=0; j<cols.length; j++) {
-					if(rows[i]<0||rows[i]>8||cols[j]<0||cols[j]>8) break;
+				for(int j=0; j<cols.length; j++){
+					if(rows[i]>8 || cols[j]>8) break;
+					else if(rows[i]<0 || cols[j]<0) {
+						if(rows[i]<0 && cols[j]>0) mineOrNot[(-1)*rows[i]][cols[j]].setBackground(Color.GRAY);
+						else if(rows[i]>0 && cols[j]<0) mineOrNot[rows[i]][(-1)*cols[j]].setBackground(Color.GRAY);
+						else if(rows[i]<0 && cols[j]<0) mineOrNot[(-1)*rows[i]][(-1)*cols[j]].setBackground(Color.GRAY); 
+					}
 					else mineOrNot[rows[i]][cols[j]].setBackground(Color.GRAY);
 				}
 			}
-			
-			
 		} // END - public void numberOfMine()
-	
+		/* 일단, 누른 지점으로부터 영역 확장되는건 구현함
+		   근데, 실제 게임에서는 확장된 영역의 각 칸에서 또 확장 - 걸리는 지뢰가 없을 때까지
+		   만약, 주위 칸에 지뢰가 있다면, 그 갯수 표시 - 갯수에 따른 색상 4:NAVY/ 3:RED / 2:GREEN / 1:BLUE
+		   비록, 위 메서드의 코드는 사용하지 않을 것 같지만, 예외 발생 원인은 주의하기
+		   이전 코드 실행 시, cols[i]=-1일 때, 이중 for문의 내부 for문에서 break작동해서, 색칠되야할 부분까지도 제외됬었음.
+		   향후 작업시 이 점 고려하기
+		   향후 방향 1) : 어느 한 칸을 눌렀을 때, 1)영역 확장 이랑 2) 주위 칸의 지뢰 갯수 카운팅 으로 나눠서 작업
+		   향후 방향 2) : https://minesweeper.online/screen/1709183266-hd-24.png , 디자인 보완
+		*/
+		
+		
 	} // END - class MyActionListener implements ActionListener{}
 		
 } // END - public class MineSweeper extends JFrame{}
