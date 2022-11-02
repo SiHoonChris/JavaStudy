@@ -47,13 +47,13 @@ public class MineSweeper extends JFrame {
 				add(mineOrNot[i][j]);
 			}
 		}
-		
+
 		setBounds(500,200,500,500);
 		setVisible(true);
 	} // END - MineSweeper(String title){}
 	
 	// --------------- MyActionListener --------------- // Event Listener(actionPerformed())
-	// Methods : actionPerformed() , steppedOnTheMine(), expansion(), colorOfNumber()
+	// Methods : actionPerformed() , stepOnTheMine(), stepOnTheLand(), colorOfNumber(), afterExpansion()
 	class MyActionListener implements ActionListener{
 		
 		public void actionPerformed(ActionEvent e) {
@@ -63,20 +63,23 @@ public class MineSweeper extends JFrame {
 					if(btn==mineOrNot[i][j]) {
 						mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
 						mineOrNot[i][j].setText(mineField[i][j]);
+						
 						if(mineField[i][j].equals("◎")) {
 							mineOrNot[i][j].setBackground(Color.RED);
-							steppedOnTheMine();
+							stepOnTheMine();
 						}
 						else {
 							mineOrNot[i][j].setBackground(Color.GRAY);
-							expansion(i,j);
+							stepOnTheLand(i,j);
+							afterExpansion();
 						}
+						
 					}
 				}
 			}
 		} // END - public void actionPerformed(ActionEvent e)
 	
-		public void steppedOnTheMine(){ // 게임 종료(지뢰 위치 공개)
+		public void stepOnTheMine(){ // 게임 종료(지뢰 위치 공개)
 			for(int i=0; i<SIZE; i++){
 				for(int j=0; j<SIZE; j++) {					
 					mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
@@ -87,7 +90,26 @@ public class MineSweeper extends JFrame {
 			}
 		} // END - public void steppedOnTheMine()
 		
-		public void expansion(int row, int col) {
+		public void afterExpansion() {
+			int prv_cnt=0;
+			
+			while(true) {
+				int prs_cnt=0;
+				
+				for(int i=0; i<SIZE; i++) {
+					for(int j=0; j<SIZE; j++) {
+						if(mineOrNot[i][j].getBackground()==Color.GRAY){
+							stepOnTheLand(i, j);
+							prs_cnt++;
+						}
+					}
+				}
+				if(prs_cnt!=prv_cnt) prv_cnt=prs_cnt;
+				else break;
+			}
+		} // END - public void afterExpansion()
+		
+		private void stepOnTheLand(int row, int col) {
 			int mineCnt=0;
 			int row_min_lmt, row_max_lmt, col_min_lmt, col_max_lmt;
 			if(row==0)      row_min_lmt=0;
@@ -113,12 +135,7 @@ public class MineSweeper extends JFrame {
 					}
 				}
 			}
-			
-		} // END - public void expansion()
-		
-		
-		/*   *** 어떻게 하면 회색으로 칠해진 칸만 골라서 expansion()을 할 수 있을까? ***   */
-		
+		} // END - public void expansion()	
 		
 		private void colorOfNumber(int row, int col, int mineCnt) {
 			
@@ -126,11 +143,10 @@ public class MineSweeper extends JFrame {
 			mineOrNot[row][col].setFont(new Font("MS Gothic", Font.BOLD, 20));
 			
 			if(mineCnt==1)      mineOrNot[row][col].setForeground(Color.BLUE);
-			else if(mineCnt==2) mineOrNot[row][col].setForeground(new Color(0, 100, 0));
+			else if(mineCnt==2) mineOrNot[row][col].setForeground(new Color(0, 100, 0)); // GREEN
 			else if(mineCnt==3) mineOrNot[row][col].setForeground(Color.RED);
-			else if(mineCnt==4) mineOrNot[row][col].setForeground(new Color(0, 0, 75));
+			else if(mineCnt==4) mineOrNot[row][col].setForeground(new Color(0, 0, 75));  // NAVY
 			else                mineOrNot[row][col].setForeground(Color.YELLOW);
-		
 		} // END - public void mineCount(int row, int col, int mineCnt)
 		
 		
