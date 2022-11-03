@@ -3,16 +3,24 @@ package SelfMade;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+
 // --------------- MineSweeper --------------- //
 public class MineSweeper extends JFrame {
 	
 	public static void main(String[] args) { new MineSweeper("지뢰찾기"); }
 	
-	
 	final int SIZE=9;
 	JButton[][] mineOrNot;                          // 좌표 클릭
 	String[][] mineField = new String[SIZE][SIZE];  // 지뢰 위치 저장
 	String[] whatIsMine = {"◎",""};                 // 지뢰 모양 - mineInstall()
+	JPanel recordPane = new JPanel();               // 게임 진행 시간, 상태, 찾은 지뢰 수 
+	JPanel gamePane = new JPanel();                 // 지뢰찾기 게임보드
+	JLabel time = new JLabel();                     // 시간 표시
+	JPanel timePanel = new JPanel();                // 시간 표시(JLabel) 배경
+	JTextArea findEmAll = new JTextArea();          // 찾은 지뢰 수 표시(초기값 10)
+	boolean wtf;                                    // 지뢰 밟으면 true로 변환
+	public Thread timer;
+	
 	
 	public void mineInstall(){ // 지뢰 10개 생성
 		int cnt=0;
@@ -30,62 +38,111 @@ public class MineSweeper extends JFrame {
 	} // END - public void mineInstall()
 	
 	
+	// Thread-Method
+	public void timeClock(){
+		timer = new Thread(){			
+			public void run(){
+				for(int sec=0;  ; sec++) {
+					try {
+						time.setText(String.valueOf(sec));
+						wait(1000);
+						sec++;
+					}
+					catch(Exception e) { System.out.println(e.getMessage()); }
+					if(wtf) break;
+				}
+			}
+		};
+		timer.start();
+	} // END - public void timeClock
+	
 	// --------------- MineSweeper --------------- // constructor
+	MineSweeper(){}
 	MineSweeper(String title){
 		super(title);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
+		recordPane.setLayout(new BorderLayout());
+		recordPane.setBackground(Color.GRAY);
+		recordPane.setOpaque(true);
+		
+		timePanel.setBackground(Color.BLACK);
+		time.setFont(new Font("MS Gothic", Font.BOLD, 30));
+		time.setForeground(Color.RED);
+//		time.setText("TIME");
+		timeClock();  //쓰레드
+		timePanel.add(time);
+		recordPane.add(timePanel, BorderLayout.WEST);
+		
+		findEmAll.setFont(new Font("MS Gothic", Font.BOLD, 30));
+		findEmAll.setBackground(Color.BLACK);
+		findEmAll.setForeground(Color.RED);
+		findEmAll.append("NUMBER");
+		recordPane.add(findEmAll, BorderLayout.EAST);
+		
 		mineInstall();
 		
-		setLayout(new GridLayout(SIZE,SIZE));
+		gamePane.setLayout(new GridLayout(SIZE,SIZE));
 		mineOrNot = new JButton[SIZE][SIZE];
 		for(int i=0; i<SIZE ; i++) {
 			for(int j=0; j<SIZE ; j++) {
-				mineOrNot[i][j] = new JButton("");
+				mineOrNot[i][j] = new JButton(" ");
+				mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 40));
 				mineOrNot[i][j].setBackground(Color.LIGHT_GRAY);
 				mineOrNot[i][j].addActionListener(new MyActionListener());
-				add(mineOrNot[i][j]);
+				gamePane.add(mineOrNot[i][j]);
 			}
 		}
-
-		setBounds(500,200,500,500);
+		
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(recordPane, BorderLayout.NORTH);
+		getContentPane().add(gamePane, BorderLayout.SOUTH);
+		
+		setBounds(500,200,500,550);
 		setVisible(true);
+		setResizable(false);
 	} // END - MineSweeper(String title){}
 	
-	// --------------- MyActionListener --------------- // Event Listener(actionPerformed())
+	// --------------- MyActionListener --------------- // Event Listener(actionPerformed()) 
 	// Methods : actionPerformed() , stepOnTheMine(), stepOnTheLand(), colorOfNumber(), afterExpansion()
 	class MyActionListener implements ActionListener{
 		
 		public void actionPerformed(ActionEvent e) {
 			JButton btn = (JButton)e.getSource();
-			for(int i=0; i<SIZE; i++) {
-				for(int j=0; j<SIZE; j++) {					
-					if(btn==mineOrNot[i][j]) {
-						mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
-						mineOrNot[i][j].setText(mineField[i][j]);
-						
-						if(mineField[i][j].equals("◎")) {
-							mineOrNot[i][j].setBackground(Color.RED);
-							stepOnTheMine();
-						}
-						else {
-							mineOrNot[i][j].setBackground(Color.GRAY);
-							stepOnTheLand(i,j);
-							afterExpansion();
-						}
-						
+				for(int i=0; i<SIZE; i++) {
+					for(int j=0; j<SIZE; j++) {					
+						if((JButton)e.getSource()==mineOrNot[i][j]) {
+							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
+							mineOrNot[i][j].setText(mineField[i][j]);
+							
+							if(mineField[i][j].equals("◎")) {
+								mineOrNot[i][j].setBackground(Color.RED);
+								stepOnTheMine();
+								wtf=true;
+							}
+							else {
+								mineOrNot[i][j].setBackground(Color.GRAY);
+								stepOnTheLand(i,j);
+								afterExpansion();
+							}
+						}	
 					}
-				}
-			}
+				}		
 		} // END - public void actionPerformed(ActionEvent e)
 	
 		public void stepOnTheMine(){ // 게임 종료(지뢰 위치 공개)
 			for(int i=0; i<SIZE; i++){
 				for(int j=0; j<SIZE; j++) {					
-					mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
 					mineOrNot[i][j].setText(mineField[i][j]);
-					if(mineField[i][j].equals("◎"))  mineOrNot[i][j].setBackground(Color.RED);
-					else  mineOrNot[i][j].setBackground(Color.GRAY);
+					if(mineField[i][j].equals("◎")) {
+						mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 15));
+						mineOrNot[i][j].setBackground(Color.RED);
+					}
+					else {
+						mineOrNot[i][j].setText(" ");
+						mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 40));
+						mineOrNot[i][j].setBackground(Color.GRAY);
+					}
 				}
 			}
 		} // END - public void steppedOnTheMine()
