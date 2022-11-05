@@ -4,8 +4,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
-//*** restart 했을 때, 기존의 창은 꺼지도록		
-//*** starter = true일 때, 즉 첫 클릭이 이뤄였을 때만, 시간 시작하도록 설계 보완
+
 //*** mouse right click 카운터
 //*** Layout 조정
 
@@ -27,6 +26,7 @@ public class MineSweeper extends JFrame {
 	JLabel time = new JLabel();                     // 스톱워치
 	JPanel timePanel = new JPanel();                // 스톱워치(time-JLabel) 배경
 	public Thread timer;                            // 스톱워치 작동 Thread
+	boolean gameStart;                              // true일 때부터 시간 흐름 - 첫 클릭 후 true로 전환
 	
 	JButton restart = new JButton();                // 상태 및 재시작
 	
@@ -53,10 +53,16 @@ public class MineSweeper extends JFrame {
 	} // END - public void mineInstall()
 	
 	// Thread-Method(스톱워치)
-	public void timeClock(){  
+	public void timeClock(){
 		timer = new Thread(){			
 			public void run(){
 				String tRecord;
+				
+				while(gameStart==false) {
+					time.setText("000");
+					if(gameStart) break;
+				}
+				
 				for(int sec=0;  ; sec++) {
 					try {
 						tRecord = String.format("%03d", sec);
@@ -66,6 +72,7 @@ public class MineSweeper extends JFrame {
 					catch(Exception e){ System.out.println(e.getMessage()); }
 					if(wtf) break;
 				}
+				
 			}
 		};
 		timer.start();
@@ -140,11 +147,13 @@ public class MineSweeper extends JFrame {
 	// Methods : actionPerformed() , stepOnTheMine(), afterExpansion(), stepOnTheLand(), colorOfNumber()
 	class MyActionListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			JButton btn = (JButton)e.getSource();
 				if((JButton)e.getSource()==restart) {
+					setVisible(false);
+					dispose();
 					new MineSweeper("지뢰찾기");
 				}
 				else {
+					gameStart=true;
 					for(int i=0; i<SIZE; i++) {
 						for(int j=0; j<SIZE; j++) {					
 							if((JButton)e.getSource()==mineOrNot[i][j]) {
