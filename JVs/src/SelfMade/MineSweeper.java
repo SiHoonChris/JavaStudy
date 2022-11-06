@@ -5,8 +5,12 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 
-//*** mouse right click 카운터
-//*** Layout 조정
+//*** 1. endGame 메서드 보완
+//***    1-1. 게임 종료 시 자동으로 새로운 윈도우 띄우고 멘트 출력(이기면 CONGRATULATIONS, 지면 LOSE...)
+//*** 2.마우스 우클릭 관련 보완
+//***    2-1. ▲표시 했어도 지뢰 밟으면 노란색 배경 적용-지뢰표시는 그대로
+//***    2-2. Color.GRAY의 확장 범위에, ▲표시가 먼저 되어 있을 때, ▲표시 지우기  
+//*** 3. Layout 조정
 
 public class MineSweeper extends JFrame {
 	
@@ -52,6 +56,24 @@ public class MineSweeper extends JFrame {
 		}
 	} // END - public void mineInstall()
 	
+	// flag(▲) 갯수 카운트
+	public void flagCounter() {
+		int Cnt =10;
+		String flagCnt;
+		
+		for(int i=0; i<SIZE; i++) {
+			for(int j=0; j<SIZE; j++) {
+				if(mineOrNot[i][j].getText()=="▲") {
+					Cnt--;
+					if(Cnt<0) Cnt=0;
+				}
+			}
+		}
+		
+		flagCnt = String.format("%03d", Cnt);
+		findEmAll.setText(String.valueOf(flagCnt));
+	} // END - public void flagCounter()
+	
 	// Thread-Method(스톱워치)
 	public void timeClock(){
 		timer = new Thread(){			
@@ -78,6 +100,15 @@ public class MineSweeper extends JFrame {
 		timer.start();
 	} // END - public void timeClock
 	
+	// 게임 승리 시 출력 또는 실행
+	public void endGame() {
+		for(int i=0; i<SIZE; i++) {
+			for(int j=0; j<SIZE; j++) {
+				if(mineOrNot[i][j].getBackground()==Color.LIGHT_GRAY && mineOrNot[i][j].getText()=="▲"){
+					System.out.println("CONGRATULATIONS");}
+			}
+		}		
+	} // END - public void endGame()
 	
 	// ----------------- [ Constructor ] ----------------- // begin 
 	MineSweeper(){}
@@ -125,6 +156,7 @@ public class MineSweeper extends JFrame {
 				mineOrNot[i][j].setBackground(Color.LIGHT_GRAY);
 				mineOrNot[i][j].setBorder(raisedbevel);
 				mineOrNot[i][j].addActionListener(new MyActionListener());
+				mineOrNot[i][j].addMouseListener(new MyActionListener());
 				gamePane.add(mineOrNot[i][j]);
 			}
 		}
@@ -144,36 +176,63 @@ public class MineSweeper extends JFrame {
 	// ----------------- [ Constructor ] ----------------- // end
 	
 	// ----------------- [ Event Listener ] ----------------- // begin
-	// Methods : actionPerformed() , stepOnTheMine(), afterExpansion(), stepOnTheLand(), colorOfNumber()
-	class MyActionListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-				if((JButton)e.getSource()==restart) {
-					setVisible(false);
-					dispose();
-					new MineSweeper("지뢰찾기");
-				}
-				else {
-					gameStart=true;
-					for(int i=0; i<SIZE; i++) {
-						for(int j=0; j<SIZE; j++) {					
-							if((JButton)e.getSource()==mineOrNot[i][j]) {
-								mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
-								mineOrNot[i][j].setText(mineField[i][j]);
-								
-								if(mineField[i][j].equals("◎")) {
-									mineOrNot[i][j].setBackground(Color.RED);
-									stepOnTheMine();
-									wtf=true;
-								}
-								else {
-									mineOrNot[i][j].setBackground(Color.GRAY);
-									stepOnTheLand(i,j);
-									afterExpansion();
-								}
-							}	
+	// Methods : mousePressed(), actionPerformed() , stepOnTheMine(), afterExpansion(), stepOnTheLand(), colorOfNumber()
+	class MyActionListener extends MouseAdapter implements ActionListener{
+		public void mousePressed(MouseEvent e) {
+			// https://imhotk.tistory.com/378
+			for(int i=0 ; i<SIZE ; i++) {
+				for(int j=0 ; j<SIZE ; j++) {					
+					if(e.getButton()==MouseEvent.BUTTON3 && e.getSource()==mineOrNot[i][j]) {
+						
+						gameStart=true;  // 마우스 우클릭도 게임 시작으로 처리
+						
+						// 이미 눌린 칸(Color.GRAY)에는 ▲ 입력 못하게 작성 
+						if(mineOrNot[i][j].getText() != "▲" && mineOrNot[i][j].getBackground() != Color.GRAY){
+							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
+							mineOrNot[i][j].setText("▲");
+							flagCounter();
 						}
-					}		
+						
+						else {  //  이미 ▲가 있는 칸에 우클릭하면 ▲가 없어짐
+							if(mineOrNot[i][j].getText() == "▲") {								
+								mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
+								mineOrNot[i][j].setText(" ");
+							}
+						}
+						
+					}
 				}
+			}
+		} // END - public void mousePressed(MouseEvent e)
+		
+		public void actionPerformed(ActionEvent e) {
+			if((JButton)e.getSource()==restart) {
+				setVisible(false);
+				dispose();
+				new MineSweeper("지뢰찾기");
+			}
+			else {
+				gameStart=true;
+				for(int i=0; i<SIZE; i++) {
+					for(int j=0; j<SIZE; j++) {					
+						if((JButton)e.getSource()==mineOrNot[i][j]) {
+							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
+							mineOrNot[i][j].setText(mineField[i][j]);
+							
+							if(mineField[i][j].equals("◎")) {
+								mineOrNot[i][j].setBackground(Color.RED);
+								stepOnTheMine();
+								wtf=true;
+							}
+							else {
+								mineOrNot[i][j].setBackground(Color.GRAY);
+								stepOnTheLand(i,j);
+								afterExpansion();
+							}
+						}
+					}
+				}		
+			}
 		} // END - public void actionPerformed(ActionEvent e)
 		
 		// 게임 종료(지뢰 위치 공개)
