@@ -5,11 +5,15 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 
-//*** 1. endGame 메서드 보완
-//***    1-1. 게임 종료 시 자동으로 새로운 윈도우 띄우고 멘트 출력(이기면 CONGRATULATIONS, 지면 LOSE...)
+//*** 1. endGame 메서드 보완 => MineSweeper(Boolean gameResult){} 생성자 보완
+//***    1-1. 게임 종료 시 자동으로 새로운 윈도우 띄우고 멘트 출력(이기면 윈도우 새로 띄우고 CONGRATULATIONS 출력)
+//***         - 게임 종료(승리)시 실행되는 윈도우 구성
+//***         - 소수점 아래 4번째 자리까지, 시간 표시(근데, System.currentTimeMillis()를 쓸거면, 굳이 Thread에서
+//***           sleep(1000)을 쓸 필요가 있을까? ContentPane내의 시계와 게임 종료시 생성되는 time record를 동기화 할 수 있지 않을까?)
+//***         - 우선, 실행되는 모습을 보기 위해, 게임 종료 시 띄울 윈도우는 restart버튼 클릭과 연동시켜 놓음
 //*** 2.마우스 우클릭 관련 보완
-//***    2-1. ▲표시 했어도 지뢰 밟으면 노란색 배경 적용-지뢰표시는 그대로
-//***    2-2. Color.GRAY의 확장 범위에, ▲표시가 먼저 되어 있을 때, ▲표시 지우기  
+//***    2-3. 사용된 깃발 수 카운터 작동 오류
+//***         - 실행된 코드들에 의해 ▲이 지워지면, 지워진 만큼 카운터의 갯수가 다시 채워져야 하는데 자동으로 안채워짐. 별도의 우클릭이 있기 전까지
 //*** 3. Layout 조정
 
 public class MineSweeper extends JFrame {
@@ -39,6 +43,10 @@ public class MineSweeper extends JFrame {
 	
 	boolean wtf;                                    // 지뢰 밟으면 true로 변환
 	
+	long startTime;                                 // 게임 시작 시간
+	long endTime;                                   // 게임 종료 시간
+	
+	boolean gameResult;                             // 게임 승리 시 true로 변환
 	
 	// 지뢰 생성(10개)
 	public void mineInstall(){
@@ -100,19 +108,8 @@ public class MineSweeper extends JFrame {
 		timer.start();
 	} // END - public void timeClock
 	
-	// 게임 승리 시 출력 또는 실행
-	public void endGame() {
-		for(int i=0; i<SIZE; i++) {
-			for(int j=0; j<SIZE; j++) {
-				if(mineOrNot[i][j].getBackground()==Color.LIGHT_GRAY && mineOrNot[i][j].getText()=="▲"){
-					System.out.println("CONGRATULATIONS");}
-			}
-		}		
-	} // END - public void endGame()
-	
 	// ----------------- [ Constructor ] ----------------- // begin 
-	MineSweeper(){}
-	MineSweeper(String title){
+	MineSweeper(String title){  // 기본 생성자
 		super(title);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -173,6 +170,36 @@ public class MineSweeper extends JFrame {
 		setVisible(true);
 		setResizable(false);
 	} // END - MineSweeper(String title){}
+	MineSweeper(Boolean gameResult){  // 게임 승리 시 출력(실행)할 생성자
+		
+		// https://stackify.com/heres-how-to-calculate-elapsed-time-in-java/
+		startTime=System.currentTimeMillis();  // static변수 선언하고, main메서드 내에 넣었다가 일단은 다시 뺌 
+		endTime=System.currentTimeMillis();
+		
+		String str_timeRc = String.valueOf(endTime-startTime);   // long(정수형) => String(문자형)
+		float f_timeRc = Float.valueOf(str_timeRc);              // String(문자형) => float(실수형)
+		String timeRc = String.format("%.4fsec", f_timeRc/1000); // 출력 예시 : 1.2670sec
+		System.out.printf(timeRc);
+		
+		getContentPane().setBackground(Color.WHITE);
+		getContentPane().setLayout(new GridLayout(3, 1, 0, 5));
+		
+		JLabel Cong = new JLabel();
+		Cong.setText("CONGRATULATIONS!!!");
+		JLabel tR = new JLabel();
+		tR.setText("Time Record : ");
+		JLabel createdBy = new JLabel();
+		createdBy.setText("created by SiHoonChris");
+		
+		getContentPane().add(Cong);
+		getContentPane().add(tR);
+		getContentPane().add(createdBy);
+		
+		setBounds((int)(500*1.25), (int)(200*1.5), 200, 300);
+		// 두 MineSweeper 생성자의 setBounds 매개변수를 수식화 시키면, 자동으로 게임종료 윈도우의 사이즈와 위치가 잡힐 것
+		setResizable(false);
+		if(gameResult) setVisible(gameResult);
+	} // END - MineSweeper(Boolean gameResult){}
 	// ----------------- [ Constructor ] ----------------- // end
 	
 	// ----------------- [ Event Listener ] ----------------- // begin
@@ -210,6 +237,7 @@ public class MineSweeper extends JFrame {
 				setVisible(false);
 				dispose();
 				new MineSweeper("지뢰찾기");
+				new MineSweeper(true);
 			}
 			else {
 				gameStart=true;
@@ -246,13 +274,17 @@ public class MineSweeper extends JFrame {
 						if(mineField[i][j].equals("◎")) {
 							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
 							mineOrNot[i][j].setBackground(new Color(250, 250, 150));
-							
 						}
 						else {
 							mineOrNot[i][j].setText(" ");
 							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 40));
 						}
 					}
+					
+					else if(mineOrNot[i][j].getText()=="▲") { //2-1. ▲표시 했어도 지뢰 밟으면 노란색 배경 적용-지뢰표시는 그대로
+						if(mineField[i][j].equals("◎")) mineOrNot[i][j].setBackground(new Color(250, 250, 150));
+					}
+					
 				}
 			}
 		} // END - public void steppedOnTheMine()
@@ -301,6 +333,8 @@ public class MineSweeper extends JFrame {
 				for(int i=row_min_lmt; i<=row_max_lmt; i++) {
 					for(int j=col_min_lmt; j<=col_max_lmt; j++) {
 						if(!mineField[i][j].equals("◎")) mineOrNot[i][j].setBackground(Color.GRAY);
+						// 2-2. Color.GRAY의 확장 범위에, ▲표시가 먼저 되어 있을 때, ▲표시 지우기
+						if(mineOrNot[i][j].getText()=="▲") mineOrNot[i][j].setText(" ");  // else if 말고 if 사용
 					}
 				}
 			}
