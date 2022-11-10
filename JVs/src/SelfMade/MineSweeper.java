@@ -8,7 +8,6 @@ import java.awt.event.*;
 //*** 3. Layout 조정
 //*** 4. time(JLabel, 게임 패널)과 tR(JLabel, 결과 패널)에서의 시차 보완
 //*** 5. 코드 정리(가독성 높이기) - 쓰레드에 사용된 메서드는 쓰레드 위로, 이벤트 리스너에 사용된 메서드는 이벤트 리스너 아래로
-//*** 6. 왜 게임 종료(승리) 창에 Time : xx.xxxxsec.가 출력이 안될까??
 
 public class MineSweeper extends JFrame {
 	
@@ -29,7 +28,7 @@ public class MineSweeper extends JFrame {
 	JPanel timePanel = new JPanel();                // 스톱워치(time-JLabel) 배경
 	public Thread timer;                            // 스톱워치 작동 Thread
 	boolean gameStart;                              // true일 때부터 시간 흐름 - 첫 클릭 후 true로 전환
-	JLabel tR = new JLabel();                       // 게임 종료 시 시간 계산 및 출력
+	static String timeRc;                           // 게임 종료 시 시간 계산
 	
 	JButton restart = new JButton();                // 상태 및 재시작
 	
@@ -102,7 +101,7 @@ public class MineSweeper extends JFrame {
 				}
 				
 				// https://stackify.com/heres-how-to-calculate-elapsed-time-in-java/ 
-				startTime=System.currentTimeMillis();
+				startTime=System.currentTimeMillis(); 
 				
 				for(int sec=0;  ; sec++) {
 					try {
@@ -116,12 +115,10 @@ public class MineSweeper extends JFrame {
 				
 				endTime=System.currentTimeMillis();
 				
-				// long(정수형) => String(문자형) => float(실수형)
-				String str_timeRc = String.valueOf(endTime-startTime); 
-				float f_timeRc = Float.valueOf(str_timeRc);     
-				String timeRc = String.format("%.4fsec", f_timeRc/1000);
-				System.out.println("Time : "+timeRc);  // 출력 예시 : 1.2670sec(시차 보완되면 그 때 지우기) 
-				tR.setText("Time : "+timeRc);
+				// long(정수형) => float(실수형) => String(문자형)
+				float f_timeRc = Float.valueOf(endTime-startTime);      
+				timeRc = String.format("Time : %.4fsec", f_timeRc/1000);
+				System.out.println(timeRc);   // 시차 보정 후 제거 예정
 				
 				new MineSweeper(gameResult);  // 게임 종료(승리) 창 생성
 			}
@@ -140,7 +137,6 @@ public class MineSweeper extends JFrame {
 		timePanel.setBackground(Color.BLACK);
 		time.setFont(new Font("MS Gothic", Font.BOLD, 30));
 		time.setForeground(Color.RED);
-		time.setLocation(10, 10);
 		timeClock();  //쓰레드
 		timePanel.add(time);
 		recordPane.add(timePanel);
@@ -197,6 +193,8 @@ public class MineSweeper extends JFrame {
 			getContentPane().setBackground(Color.WHITE);
 			getContentPane().setLayout(new BorderLayout());
 			
+			JLabel tR = new JLabel();
+			tR.setText(timeRc);
 			getContentPane().add(tR, BorderLayout.NORTH);
 			
 			JLabel Cong = new JLabel();
