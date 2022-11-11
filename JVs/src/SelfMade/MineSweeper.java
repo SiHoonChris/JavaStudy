@@ -6,8 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 //*** 3. Layout 조정
-//*** 4. time(JLabel, 게임 패널)과 tR(JLabel, 결과 패널)에서의 시차 보완
-//*** 5. 코드 정리(가독성 높이기) - 쓰레드에 사용된 메서드는 쓰레드 위로, 이벤트 리스너에 사용된 메서드는 이벤트 리스너 아래로
+//*** 5. 코드 정리(가독성 높이기) - 쓰레드에 사용된 메서드는 쓰레드 코드 상단으로, 이벤트 리스너에 사용된 메서드는 이벤트 리스너 코드 하단으로
 
 public class MineSweeper extends JFrame {
 	
@@ -101,16 +100,16 @@ public class MineSweeper extends JFrame {
 				}
 				
 				// https://stackify.com/heres-how-to-calculate-elapsed-time-in-java/ 
-				startTime=System.currentTimeMillis(); 
+				startTime=System.currentTimeMillis();
 				
 				for(int sec=0;  ; sec++) {
 					try {
+						if(sec!=0)sleep(1000);
 						tRecord = String.format("%03d", sec);
 						time.setText(tRecord);
-						sleep(1000);
 					}
 					catch(Exception e){ System.out.println(e.getMessage()); }
-					if(wtf || gameResult) break;
+					if(wtf || gameResult) {break;}
 				}
 				
 				endTime=System.currentTimeMillis();
@@ -118,7 +117,6 @@ public class MineSweeper extends JFrame {
 				// long(정수형) => float(실수형) => String(문자형)
 				float f_timeRc = Float.valueOf(endTime-startTime);      
 				timeRc = String.format("Time : %.4fsec", f_timeRc/1000);
-				System.out.println(timeRc);   // 시차 보정 후 제거 예정
 				
 				new MineSweeper(gameResult);  // 게임 종료(승리) 창 생성
 			}
