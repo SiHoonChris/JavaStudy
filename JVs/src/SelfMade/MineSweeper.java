@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.*;
 
 //*** 3. Layout 조정
-//*** 5. 코드 정리(가독성 높이기) - 쓰레드에 사용된 메서드는 쓰레드 코드 상단으로, 이벤트 리스너에 사용된 메서드는 이벤트 리스너 코드 하단으로
 
 public class MineSweeper extends JFrame {
 	
@@ -15,114 +14,31 @@ public class MineSweeper extends JFrame {
 	// -------------------------------------------------------------- //
 	
 	
-	final int SIZE=9;                               // 9x9
-	JButton[][] mineOrNot;                          // 클릭 버튼 설정용 배열 
-	String[][] mineField = new String[SIZE][SIZE];  // 지뢰 위치 설정
+	final int SIZE=9;                               // 사이즈 : 9x9
+	JButton[][] mineOrNot;                          // 클릭 버튼 배열 
+	String[][] mineField = new String[SIZE][SIZE];  // 지뢰 위치 배열
 	String[] whatIsMine = {"◎",""};                 // 지뢰 모양
-	
-	JPanel recordPane = new JPanel();               // timePanel(스톱워치), restart(상태 및 재시작), flagPanel(찾은 지뢰 수) add할 Panel 
 	JPanel gamePane = new JPanel();                 // 지뢰찾기 게임이 이뤄지는 Panel
+	JPanel recordPane = new JPanel();               // timePanel(스톱워치), restart(상태 및 재시작), flagPanel(찾은 지뢰 수)을 부착할 Panel 		
 	
 	JLabel time = new JLabel();                     // 스톱워치
-	JPanel timePanel = new JPanel();                // 스톱워치(time-JLabel) 배경
+	JPanel timePanel = new JPanel();                // time의 배경(패널)
 	public Thread timer;                            // 스톱워치 작동 Thread
-	boolean gameStart;                              // true일 때부터 시간 흐름 - 첫 클릭 후 true로 전환
-	static String timeRc;                           // 게임 종료 시 시간 계산
+	boolean gameStart;                              // true일 때부터 시간 흐름(스톱워치 시작) - 좌우 상관없이 첫 클릭 후 true로 전환
+	long startTime;                                 // 게임 시작 시간 - gameStart가 true가 되면 시작
+	long endTime;                                   // 게임 종료 시간 - wtf 또는 gameResult가 true가 되면 종료
+	static String timeRc;                           // 게임 종료 시 시간 계산 ( (endTime-startTime)/1000 )
 	
-	JButton restart = new JButton();                // 상태 및 재시작
+	JButton restart = new JButton();                // 상태(평시에는 노란색, 지뢰 밟으면 검은색) 및 재시작
+	boolean wtf;                                    // 패배 : 지뢰 밟으면 true로 변환
+	boolean gameResult;                             // 승리 : 게임 승리 시 true로 변환
 	
-	JLabel findEmAll = new JLabel();                // 찾은 지뢰 수(초기값 10, 다 찾으면 0)
-	JPanel flagPanel = new JPanel();                // 찾은 지뢰 수(findEmAll-JLabel) 배경
-	
-	boolean wtf;                                    // 지뢰 밟으면 true로 변환
-	
-	long startTime;                                 // 게임 시작 시간
-	long endTime;                                   // 게임 종료 시간
-	
-	boolean gameResult;                             // 게임 승리 시 true로 변환
+	JLabel findEmAll = new JLabel();                // 찾은 지뢰 수(gamePane 위의 ▲(우클릭) 갯수, 초기값 10 - 10개 이상 우클릭 시 0)
+	JPanel flagPanel = new JPanel();                // findEmAll의 배경(패널)
 	// ------------------------- 멤버변수 정리 ------------------------- //
 
-	// --------------- 메서드, 생성자, 쓰레드, 이벤트 리스너 ------------------ //	
-	public void mineInstall(){  // 지뢰 생성(10개)
-		int cnt=0;
-		
-		for(int i=0; i<SIZE ; i++) {
-			for(int j=0; j<SIZE ; j++)  mineField[i][j]=whatIsMine[1];
-		}
-		
-		while(cnt<10) {
-			int i = (int)(Math.random()*SIZE);
-			int j = (int)(Math.random()*SIZE);
-			if(mineField[i][j]==whatIsMine[1]) {mineField[i][j]=whatIsMine[0]; cnt++;}
-			else cnt+=0;
-		}
-	} // END - public void mineInstall()
 	
-	public void flagCounter() {  // flag(▲, 우클릭된 칸) 갯수 카운트
-		int Cnt =10;
-		String flagCnt;
-		
-		for(int i=0; i<SIZE; i++) {
-			for(int j=0; j<SIZE; j++) {
-				if(mineOrNot[i][j].getText()=="▲") {
-					Cnt--;
-					if(Cnt<0) Cnt=0;
-				}
-			}
-		}
-		
-		flagCnt = String.format("%03d", Cnt);
-		findEmAll.setText(String.valueOf(flagCnt));
-	} // END - public void flagCounter()
-	
-	public void survived() {  // 게임 종료 탐지		
-		int noMinesUnderMyFoot=0;
-		
-		for(int i=0; i<SIZE; i++) {
-			for(int j=0; j<SIZE; j++) {
-				if(mineField[i][j]==whatIsMine[1] && mineOrNot[i][j].getBackground()==Color.GRAY) {
-					noMinesUnderMyFoot++;
-				}
-			}
-		}
-		
-		if(noMinesUnderMyFoot == SIZE*SIZE-10) gameResult=true;
-	} // END - public void survived()
-	
-	public void timeClock(){  // Thread-Method(스톱워치)
-		timer = new Thread(){			
-			public void run(){
-				String tRecord;
-				
-				while(gameStart==false) {
-					time.setText("000");
-					if(gameStart) break;
-				}
-				
-				// https://stackify.com/heres-how-to-calculate-elapsed-time-in-java/ 
-				startTime=System.currentTimeMillis();
-				
-				for(int sec=0;  ; sec++) {
-					try {
-						if(sec!=0)sleep(1000);
-						tRecord = String.format("%03d", sec);
-						time.setText(tRecord);
-					}
-					catch(Exception e){ System.out.println(e.getMessage()); }
-					if(wtf || gameResult) {break;}
-				}
-				
-				endTime=System.currentTimeMillis();
-				
-				// long(정수형) => float(실수형) => String(문자형)
-				float f_timeRc = Float.valueOf(endTime-startTime);      
-				timeRc = String.format("Time : %.4fsec", f_timeRc/1000);
-				
-				new MineSweeper(gameResult);  // 게임 종료(승리) 창 생성
-			}
-		};
-		timer.start();
-	} // END - public void timeClock(){}
+	// --------------- 생성자, 쓰레드, 이벤트 리스너, 메서드 ------------------ //
 	
 	// ----------------- [ Constructor ] ----------------- // begin 
 	MineSweeper(String title){  // 기본 생성자
@@ -135,7 +51,7 @@ public class MineSweeper extends JFrame {
 		timePanel.setBackground(Color.BLACK);
 		time.setFont(new Font("MS Gothic", Font.BOLD, 30));
 		time.setForeground(Color.RED);
-		timeClock();  //쓰레드
+		timeClock();
 		timePanel.add(time);
 		recordPane.add(timePanel);
 		
@@ -204,26 +120,76 @@ public class MineSweeper extends JFrame {
 			
 			JLabel createdBy = new JLabel();
 			createdBy.setText("created by SiHoonChris");
-			createdBy.setHorizontalAlignment(SwingConstants.RIGHT); // https://stackoverflow.com/questions/12589494/align-text-in-jlabel-to-the-right
+			createdBy.setHorizontalAlignment(SwingConstants.RIGHT);
+			// https://stackoverflow.com/questions/12589494/align-text-in-jlabel-to-the-right
 			getContentPane().add(createdBy, BorderLayout.SOUTH);
 			
 			setBounds((int)(500*1.3), (int)(200*1.6), 200, 300);
 			setResizable(false);
 			setVisible(gameResult);
 		}
-		
 	} // END - MineSweeper(Boolean gameResult){}
 	// ----------------- [ Constructor ] ----------------- // end
 	
+	public void mineInstall(){  // 지뢰 생성(10개)
+		int cnt=0;
+		
+		for(int i=0; i<SIZE ; i++) {
+			for(int j=0; j<SIZE ; j++)  mineField[i][j]=whatIsMine[1];
+		}
+		
+		while(cnt<10) {
+			int i = (int)(Math.random()*SIZE);
+			int j = (int)(Math.random()*SIZE);
+			if(mineField[i][j]==whatIsMine[1]) {mineField[i][j]=whatIsMine[0]; cnt++;}
+			else cnt+=0;
+		}
+	} // END - public void mineInstall()
+	
+	public void timeClock(){  // 스톱워치 - Thread
+		timer = new Thread(){			
+			public void run(){
+				String tRecord;
+				
+				while(gameStart==false) {
+					time.setText("000");
+					if(gameStart) break;
+				}
+				
+				// https://stackify.com/heres-how-to-calculate-elapsed-time-in-java/ 
+				startTime=System.currentTimeMillis();
+				
+				for(int sec=0;  ; sec++) {
+					try {
+						if(sec!=0)sleep(1000);
+						tRecord = String.format("%03d", sec);
+						time.setText(tRecord);
+					}
+					catch(Exception e){ System.out.println(e.getMessage()); }
+					if(wtf || gameResult) {break;}
+				}
+				
+				endTime=System.currentTimeMillis();
+				
+				float f_timeRc = Float.valueOf(endTime-startTime);      
+				timeRc = String.format("Time : %.4fsec", f_timeRc/1000);
+				
+				new MineSweeper(gameResult);  // 게임 종료(승리) 창 생성
+			}
+		};
+		timer.start();
+	} // END - public void timeClock(){}
+	
 	// ----------------- [ Event Listener ] ----------------- // begin
-	// Methods : mousePressed(), actionPerformed() , stepOnTheMine(), afterExpansion(), stepOnTheLand(), colorOfNumber()
+	// Methods : mousePressed(), actionPerformed(), stepOnTheMine(), stepOnTheLand(),
+	//           colorOfNumber(), afterExpansion(), flagCounter(), survived()
 	class MyActionListener extends MouseAdapter implements ActionListener{
+		
 		public void mousePressed(MouseEvent e) {
-			// https://imhotk.tistory.com/378
 			for(int i=0 ; i<SIZE ; i++) {
-				for(int j=0 ; j<SIZE ; j++) {					
+				for(int j=0 ; j<SIZE ; j++) {	
+					// https://imhotk.tistory.com/378
 					if(e.getButton()==MouseEvent.BUTTON3 && e.getSource()==mineOrNot[i][j]) {
-						
 						gameStart=true;  // 마우스 우클릭도 게임 시작으로 처리
 						
 						// 이미 눌린 칸(Color.GRAY)에는 ▲ 입력 못하게 작성 
@@ -232,7 +198,6 @@ public class MineSweeper extends JFrame {
 							mineOrNot[i][j].setText("▲");
 							flagCounter();
 						}
-						
 						else {  //  이미 ▲가 있는 칸에 우클릭하면 ▲가 없어짐
 							if(mineOrNot[i][j].getText() == "▲") {								
 								mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
@@ -254,6 +219,7 @@ public class MineSweeper extends JFrame {
 			}
 			else {
 				gameStart=true;
+				
 				for(int i=0; i<SIZE; i++) {
 					for(int j=0; j<SIZE; j++) {					
 						if((JButton)e.getSource()==mineOrNot[i][j]) {
@@ -280,8 +246,9 @@ public class MineSweeper extends JFrame {
 			restart.setForeground(Color.BLACK);
 			
 			for(int i=0; i<SIZE; i++){
-				for(int j=0; j<SIZE; j++) {					
-					if(mineOrNot[i][j].getText()==" ") {						
+				for(int j=0; j<SIZE; j++) {
+					
+					if(mineOrNot[i][j].getText()==" ") {
 						mineOrNot[i][j].setText(mineField[i][j]);
 						if(mineField[i][j].equals("◎")) {
 							mineOrNot[i][j].setFont(new Font("MS Gothic", Font.BOLD, 20));
@@ -293,35 +260,13 @@ public class MineSweeper extends JFrame {
 						}
 					}
 					
-					else if(mineOrNot[i][j].getText()=="▲") { //2-1. ▲표시 했어도 지뢰 밟으면 노란색 배경 적용-지뢰표시는 그대로
+					else if(mineOrNot[i][j].getText()=="▲") {
 						if(mineField[i][j].equals("◎")) mineOrNot[i][j].setBackground(new Color(250, 250, 150));
 					}
 					
 				}
 			}
-		} // END - public void steppedOnTheMine()
-		
-		public void afterExpansion() {  // 버튼 클릭 후 확장
-			int prv_cnt=0;
-			
-			while(true) {
-				int prs_cnt=0;
-				
-				for(int i=0; i<SIZE; i++) {
-					for(int j=0; j<SIZE; j++) {
-						if(mineOrNot[i][j].getBackground()==Color.GRAY){
-							stepOnTheLand(i, j);
-							prs_cnt++;
-						}
-					}
-				}
-				if(prs_cnt!=prv_cnt) prv_cnt=prs_cnt;
-				else break;
-			}
-			
-			flagCounter();
-			survived();
-		} // END - public void afterExpansion()
+		} // END - public void stepOnTheMine()
 		
 		private void stepOnTheLand(int row, int col) {  // 지뢰 없는 칸 밟았을 때
 			int mineCnt=0;
@@ -346,7 +291,7 @@ public class MineSweeper extends JFrame {
 				for(int i=row_min_lmt; i<=row_max_lmt; i++) {
 					for(int j=col_min_lmt; j<=col_max_lmt; j++) {
 						if(!mineField[i][j].equals("◎")) mineOrNot[i][j].setBackground(Color.GRAY);
-						if(mineOrNot[i][j].getText()=="▲") mineOrNot[i][j].setText(" ");  // else if 말고 if 사용
+						if(mineOrNot[i][j].getText()=="▲") mineOrNot[i][j].setText(" ");
 					}
 				}
 			}
@@ -362,6 +307,59 @@ public class MineSweeper extends JFrame {
 			else if(mineCnt==4) mineOrNot[row][col].setForeground(new Color(0, 0, 75));  // NAVY
 			else                mineOrNot[row][col].setForeground(Color.YELLOW);
 		} // END - private void colorOfNumber(int row, int col, int mineCnt)
+
+		public void afterExpansion() {  // 버튼 클릭 후 확장
+			int prv_cnt=0;
+			
+			while(true) {
+				int prs_cnt=0;
+				
+				for(int i=0; i<SIZE; i++) {
+					for(int j=0; j<SIZE; j++) {
+						if(mineOrNot[i][j].getBackground()==Color.GRAY){
+							stepOnTheLand(i, j);
+							prs_cnt++;
+						}
+					}
+				}
+				if(prs_cnt!=prv_cnt) prv_cnt=prs_cnt;
+				else break;
+			}
+			
+			flagCounter();
+			survived();
+		} // END - public void afterExpansion()
+		
+		public void flagCounter() {  // flag(▲, 우클릭된 칸) 갯수 카운트
+			int Cnt =10;
+			String flagCnt;
+			
+			for(int i=0; i<SIZE; i++) {
+				for(int j=0; j<SIZE; j++) {
+					if(mineOrNot[i][j].getText()=="▲") {
+						Cnt--;
+						if(Cnt<0) Cnt=0;
+					}
+				}
+			}
+			
+			flagCnt = String.format("%03d", Cnt);
+			findEmAll.setText(String.valueOf(flagCnt));
+		} // END - public void flagCounter()
+		
+		public void survived() {  // 게임 종료(승리) 탐지		
+			int noMinesUnderMyFoot=0;
+			
+			for(int i=0; i<SIZE; i++) {
+				for(int j=0; j<SIZE; j++) {
+					if(mineField[i][j]==whatIsMine[1] && mineOrNot[i][j].getBackground()==Color.GRAY) {
+						noMinesUnderMyFoot++;
+					}
+				}
+			}
+			
+			if(noMinesUnderMyFoot == SIZE*SIZE-10) gameResult=true;
+		} // END - public void survived()
 		
 	} // END - class MyActionListener implements ActionListener{}
 	// ----------------- [ Event Listener ] ----------------- // end
