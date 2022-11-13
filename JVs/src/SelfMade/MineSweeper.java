@@ -5,8 +5,6 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 
-//*** 3. Layout 조정
-
 public class MineSweeper extends JFrame {
 	
 	// ----------------------- [ Main Method ] ---------------------- //
@@ -43,8 +41,7 @@ public class MineSweeper extends JFrame {
 	// ----------------- [ Constructor ] ----------------- // begin 
 	MineSweeper(String title){  // 기본 생성자
 		super(title);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+				
 		recordPane.setLayout(new FlowLayout(FlowLayout.CENTER, 90, 5));
 		recordPane.setBackground(Color.LIGHT_GRAY);
 		
@@ -69,14 +66,18 @@ public class MineSweeper extends JFrame {
 		findEmAll.setText("010");
 		flagPanel.add(findEmAll);
 		recordPane.add(flagPanel);
+		
+		JPanel UpperPartPane = new JPanel();
+		UpperPartPane.setLayout(new BorderLayout());
+		UpperPartPane.add(recordPane, BorderLayout.NORTH);
+		UpperPartPane.add(new JPanel(), BorderLayout.SOUTH);
 
 		mineInstall();
 		
-		Border raisedbevel = BorderFactory.createRaisedBevelBorder();
-		// https://docs.oracle.com/javase/tutorial/uiswing/components/border.html
-		
 		gamePane.setLayout(new GridLayout(SIZE,SIZE, 2, 2));
 		mineOrNot = new JButton[SIZE][SIZE];
+		Border raisedbevel = BorderFactory.createRaisedBevelBorder();
+		// https://docs.oracle.com/javase/tutorial/uiswing/components/border.html
 		for(int i=0; i<SIZE ; i++) {
 			for(int j=0; j<SIZE ; j++) {
 				mineOrNot[i][j] = new JButton(" ");
@@ -91,7 +92,7 @@ public class MineSweeper extends JFrame {
 		
 		getContentPane().setBackground(Color.LIGHT_GRAY);
 		getContentPane().setLayout(new BorderLayout());
-		getContentPane().add(recordPane, BorderLayout.NORTH);
+		getContentPane().add(UpperPartPane, BorderLayout.NORTH);
 		getContentPane().add(gamePane, BorderLayout.CENTER);
 		getContentPane().add(new JPanel(), BorderLayout.EAST);
 		getContentPane().add(new JPanel(), BorderLayout.WEST);
@@ -100,6 +101,7 @@ public class MineSweeper extends JFrame {
 		setBounds(500,200,500,600);
 		setVisible(true);
 		setResizable(false);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	} // END - MineSweeper(String title){}
 	
 	MineSweeper(Boolean gameResult){  // 게임 승리 시 출력(실행)할 생성자
